@@ -15,9 +15,6 @@ services:
       - ./data:/data
       - ./extras:/extras
     environment:
-      ANDROID_API: 30
-      ANDROID_ARCH: x86_64
-      ANDROID_TYPE: default
       DNS: one.one.one.one
       # RAM_SIZE: 4096
       # Optional screen resolution in WIDTHxHEIGHT format
