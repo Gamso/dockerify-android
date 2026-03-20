@@ -37,5 +37,28 @@ if [ -f "$CONFIG_FILE" ]; then
   fi
 fi
 
+# Configure snapshot options based on SNAPSHOT_ENABLED
+SNAPSHOT_DIR="/data/android.avd/snapshots/default_boot"
+if [ "${SNAPSHOT_ENABLED}" = "1" ] || [ "${SNAPSHOT_ENABLED,,}" = "true" ]; then
+  if [ -d "$SNAPSHOT_DIR" ] && [ -f "$SNAPSHOT_DIR/snapshot.pb" ]; then
+    echo "Snapshot found — loading for fast boot..."
+    SNAPSHOT_OPTS="-snapshot default_boot -no-snapshot-save"
+  else
+    echo "No snapshot yet — will do a cold boot and save a snapshot..."
+    SNAPSHOT_OPTS="-no-snapshot-load -snapshot default_boot"
+    (
+      while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
+        sleep 5
+      done
+      sleep 30
+      echo "Saving snapshot..."
+      adb emu avd snapshot save default_boot
+      echo "Snapshot saved!"
+    ) &
+  fi
+else
+  SNAPSHOT_OPTS="-no-snapshot"
+fi
+
 # Start the emulator with the appropriate ramdisk.img
-/opt/android-sdk/emulator/emulator -avd android -nojni -netfast -writable-system -no-window -no-audio -no-boot-anim -skip-adb-auth -gpu swiftshader_indirect -no-snapshot -no-metrics $RAMDISK -qemu -m ${RAM_SIZE:-4096}
+/opt/android-sdk/emulator/emulator -avd android -nojni -netfast -writable-system -no-window -no-audio -no-boot-anim -skip-adb-auth -gpu swiftshader_indirect -no-metrics $SNAPSHOT_OPTS $RAMDISK -qemu -m ${RAM_SIZE:-4096}

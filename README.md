@@ -139,19 +139,41 @@ scrcpy -s localhost:5555
 
 | Variable | Description | Default |
 | --- | --- | --- |
+| `ANDROID_API` | Android API level (set at build time). E.g. `29` for Android 10, `33` for Android 13 | `30` |
+| `ANDROID_ARCH` | CPU architecture for the system image (set at build time) | `x86_64` |
+| `ANDROID_TYPE` | System image type (set at build time). E.g. `default`, `google_apis`, `google_apis_playstore` | `default` |
 | `DNS` | Private DNS server used inside the emulator | `one.one.one.one` |
 | `RAM_SIZE` | RAM in megabytes allocated to the emulator | `4096` |
 | `SCREEN_RESOLUTION` | Screen size in `WIDTHxHEIGHT` format (e.g. `1080x1920`) | device default |
 | `SCREEN_DENSITY` | Screen pixel density in DPI | device default |
+| `EMULATOR_LANGUAGE` | Default language ISO 639-1 code (e.g. `fr`, `es`, `de`) | *(none)* |
+| `EMULATOR_COUNTRY` | Default country ISO 3166-1 code (e.g. `FR`, `ES`, `DE`) | `US` |
+| `SNAPSHOT_ENABLED` | Set to `1` to enable emulator snapshots for faster restarts | `0` |
 | `ROOT_SETUP` | Set to `1` to enable rooting and Magisk. Can be turned on after the first start but cannot be undone without recreating the data volume. | `0` |
 | `GAPPS_SETUP` | Set to `1` to install PICO GAPPS. Can be turned on after the first start but cannot be undone without recreating the data volume. | `0` |
+
+### Building with a Different Android Version
+
+To build the image for a specific Android API level:
+
+```bash
+docker compose build --build-arg ANDROID_API=29 --build-arg ANDROID_ARCH=x86_64
+```
+
+Common API level mappings:
+- Android 10 = API 29
+- Android 11 = API 30 (default)
+- Android 12 = API 31
+- Android 12L = API 32
+- Android 13 = API 33
+- Android 14 = API 34
 
 
 ## 🔄 **First Boot Process**
 
 The first time you start the container, it will perform a comprehensive setup process that includes:
 
-1. **AVD Creation:** Creates a new Android Virtual Device running Android 30 (Android 11)
+1. **AVD Creation:** Creates a new Android Virtual Device using the configured Android API level (default: Android 30 / Android 11)
 2. **PICO GAPPS Installation** (when `GAPPS_SETUP=1`): Adds essential Google services.
 3. **Rooting the Device** (when `ROOT_SETUP=1`): Performs multiple reboots to:
    - Disable AVB verification
@@ -159,7 +181,9 @@ The first time you start the container, it will perform a comprehensive setup pr
    - Install Magisk for root access
    - Reboot to apply root
 4. **Extras Copied:** Pushes everything from the `extras` directory to `/sdcard/Download` so files like APKs or Magisk modules are ready for manual installation on the device.
-5. **Configuring optimal device settings**
+5. **Locale Configuration** (when `EMULATOR_LANGUAGE` is set): Configures the default language and country on the device.
+6. **Configuring optimal device settings**
+7. **Snapshot Creation** (when `SNAPSHOT_ENABLED=1`): After the first full boot, saves a snapshot so that subsequent restarts are near-instant.
 
 `ROOT_SETUP` and `GAPPS_SETUP` are checked on every start. If you enable them after the first boot, the script installs the requested components once and marks them complete so they won't run again. Removing them later requires recreating the data volume.
 
@@ -199,7 +223,7 @@ This includes:
 
 ## 🚧 **Roadmap**
 
-- [ ] Support for additional Android versions
+- [x] Support for additional Android versions
 - [x] Integration with CI/CD pipelines
 - [ ] Support ARM64 CPU architecture
 - [x] PICO GAPPS installation

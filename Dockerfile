@@ -1,5 +1,10 @@
 FROM ubuntu:20.04
 
+# Build-time arguments for Android version
+ARG ANDROID_API=30
+ARG ANDROID_ARCH=x86_64
+ARG ANDROID_TYPE=default
+
 # Install necessary packages
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -32,6 +37,11 @@ ENV ANDROID_AVD_HOME=/data
 ENV ADB_DIR="$ANDROID_HOME/platform-tools"
 ENV PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ADB_DIR:$PATH"
 
+# Persist build args as environment variables for runtime scripts
+ENV ANDROID_API=${ANDROID_API}
+ENV ANDROID_ARCH=${ANDROID_ARCH}
+ENV ANDROID_TYPE=${ANDROID_TYPE}
+
 # Initializing the required directories.
 RUN mkdir /root/.android/ && \
 	touch /root/.android/repositories.cfg && \
@@ -43,8 +53,8 @@ RUN mkdir /root/.android/ && \
 #COPY emulator/package.xml /root/package.xml
 
 
-# Detect architecture and set environment variable
-RUN yes | sdkmanager --sdk_root=$ANDROID_HOME "emulator" "platform-tools" "platforms;android-30" "system-images;android-30;default;x86_64"
+# Download the system image based on build args
+RUN yes | sdkmanager --sdk_root=$ANDROID_HOME "emulator" "platform-tools" "platforms;android-${ANDROID_API}" "system-images;android-${ANDROID_API};${ANDROID_TYPE};${ANDROID_ARCH}"
 # remove /opt/android-sdk/emulator/crashpad_handler
 RUN rm -f /opt/android-sdk/emulator/crashpad_handler
 # RUN if [ "$(uname -m)" = "aarch64" ]; then \

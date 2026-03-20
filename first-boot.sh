@@ -16,6 +16,15 @@ apply_settings() {
     sleep 5
   done
   adb root
+  if [ -n "$EMULATOR_LANGUAGE" ]; then
+    LOCALE="${EMULATOR_LANGUAGE}_${EMULATOR_COUNTRY:-US}"
+    adb shell setprop persist.sys.language "${EMULATOR_LANGUAGE}"
+    adb shell setprop persist.sys.country "${EMULATOR_COUNTRY:-US}"
+    adb shell setprop persist.sys.locale "${LOCALE}"
+    adb shell "settings put system system_locales ${LOCALE}" 2>/dev/null || true
+    adb shell "am broadcast -a android.intent.action.LOCALE_CHANGED" 2>/dev/null || true
+    echo "Locale set to: ${LOCALE}"
+  fi
   adb shell settings put global window_animation_scale 0
   adb shell settings put global transition_animation_scale 0
   adb shell settings put global animator_duration_scale 0
@@ -66,8 +75,8 @@ install_root() {
   git clone https://gitlab.com/newbit/rootAVD.git
   pushd rootAVD
   sed -i 's/read -t 10 choice/choice=1/' rootAVD.sh
-  ./rootAVD.sh system-images/android-30/default/x86_64/ramdisk.img
-  cp /opt/android-sdk/system-images/android-30/default/x86_64/ramdisk.img /data/android.avd/ramdisk.img
+  ./rootAVD.sh system-images/android-${ANDROID_API:-30}/${ANDROID_TYPE:-default}/${ANDROID_ARCH:-x86_64}/ramdisk.img
+  cp /opt/android-sdk/system-images/android-${ANDROID_API:-30}/${ANDROID_TYPE:-default}/${ANDROID_ARCH:-x86_64}/ramdisk.img /data/android.avd/ramdisk.img
   popd
   echo "Root Done"
   sleep 10
@@ -102,7 +111,8 @@ if [ -f /data/.first-boot-done ]; then
 fi
 
 echo "Init AVD ..."
-echo "no" | avdmanager create avd -n android -k "system-images;android-30;default;x86_64"
+SYSTEM_IMAGE="system-images;android-${ANDROID_API:-30};${ANDROID_TYPE:-default};${ANDROID_ARCH:-x86_64}"
+echo "no" | avdmanager create avd -n android -k "${SYSTEM_IMAGE}"
 
 [ "$gapps_needed" = true ] && install_gapps && [ "$root_needed" = false ] && adb reboot
 [ "$root_needed" = true ] && install_root
