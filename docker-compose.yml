@@ -5,12 +5,19 @@ services:
     image: shmayro/dockerify-android:latest
     build:
       context: .
+      args:
+        ANDROID_API: 30
+        ANDROID_ARCH: x86_64
+        ANDROID_TYPE: default
     ports:
       - "5555:5555"
     volumes:
       - ./data:/data
       - ./extras:/extras
     environment:
+      ANDROID_API: 30
+      ANDROID_ARCH: x86_64
+      ANDROID_TYPE: default
       DNS: one.one.one.one
       # RAM_SIZE: 4096
       # Optional screen resolution in WIDTHxHEIGHT format
@@ -19,6 +26,9 @@ services:
       #SCREEN_DENSITY: 227
       ROOT_SETUP: 0 # set to 1 to enable rooting
       GAPPS_SETUP: 0 # set to 1 to install PICO GAPPS
+      # EMULATOR_LANGUAGE: fr
+      # EMULATOR_COUNTRY: FR
+      # SNAPSHOT_ENABLED: 1
     privileged: true
     devices:
       - /dev/kvm
